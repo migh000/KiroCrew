@@ -16,6 +16,7 @@ import stat as stat_module  # noqa: F401
 import time
 import uuid
 import weakref
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import (  # noqa: F401
@@ -652,6 +653,7 @@ from kiro_crew.recovery.ladder import (
 from kiro_crew.repeat_loop import RepeatLoopTracker
 from kiro_crew.safety_override import safety_override  # noqa: F401
 from kiro_crew.security import (
+    REDACTED_CREDENTIAL_TAG,
     StreamRedactor,
     is_sensitive_path,
     oauth_url_contains_credential,
@@ -664,7 +666,6 @@ from kiro_crew.security import (
     sanitized_oauth_endpoint_display,
 )
 from kiro_crew.security.credential_sources import credential_records
-from kiro_crew.security.exfil import MAX_BLOCKED_LINKS_PER_MESSAGE
 from kiro_crew.security.readonly_bash import (
     command_invokes_git,
     is_read_only_bash,
@@ -2060,18 +2061,71 @@ def _segment_row_meta(
     return out
 
 
-#: Past this the raw segment copy is abandoned and the flush describes only
-#: what survived per-delta redaction.
+#: Past this the raw segment copy is abandoned, and the flush saves
+#: :data:`_SEGMENT_UNCHECKED_TEXT` instead of the segment (fail closed).
 _SEGMENT_RAW_MAX_CHARS = 2_000_000
 
+#: What a segment flush saves when it cannot redact the segment's raw copy as
+#: one text: no raw copy (past the cap), a raw copy that does not match the
+#: streamed text, a redaction pass that raised, or a value a per-delta pass
+#: removed that the whole-text pass would keep, in the text or in a record.
+_SEGMENT_UNCHECKED_TEXT = (
+    "[REDACTED: reply withheld, it could not be checked for secrets."
+    " Ask the agent to send it again.]"
+)
 
-def _accumulate_segment_raw(slot: _ChatSlot, text: str) -> None:
-    """Append one streamed delta to the slot's raw segment copy."""
+#: Ceiling on the substring work the flush spends checking removed values
+#: against the saved row (values times characters scanned). The flush runs on
+#: the event loop, so a reply with tens of thousands of removed values must
+#: not stall it; past this the segment fails closed instead.
+_SEGMENT_CHECK_MAX_WORK = 400_000_000
+
+
+def _reset_segment_copy(slot: _ChatSlot) -> None:
+    """Drop the slot's raw segment copy and the checks that ride with it."""
+    slot.segment_raw_text = ""
+    slot.segment_shown_sha = hashlib.sha256()
+    slot.segment_removed = {}
+
+
+def _redact_delta(text: str) -> tuple[str, list[tuple[str, str]]]:
+    """One streamed delta through both removers, as the run loop streams it.
+
+    Returns ``(shown, removed)``: the redacted delta, and ``(value, tag)`` for
+    every value the two passes replaced (each blocked address with its
+    placeholder, each credential value with the credential tag). ``removed``
+    is memory only and must never be stored, logged or sent.
+    """
+    removed: list[tuple[str, str]] = []
+    shown, _, _ = redact_exfiltration_urls_with_records(text, removed_out=removed)
+    shown, _, matches = redact_credentials_with_records(shown, defer_token_param=True)
+    removed += [(m.value, REDACTED_CREDENTIAL_TAG) for m in matches if m.value]
+    return shown, removed
+
+
+def _accumulate_segment_raw(
+    slot: _ChatSlot, text: str, shown: str, removed: Iterable[tuple[str, str]]
+) -> None:
+    """Append one streamed delta to the slot's raw segment copy.
+
+    ``shown`` and ``removed`` are what :func:`_redact_delta` returned for it:
+    the piece the run loop appends to the streamed text, and each value it
+    replaced. The hash of ``shown`` lets the flush prove the raw copy is the
+    copy of that text, and each removed value lets it keep that value out of
+    the saved text too (see :func:`_redact_segment`).
+    """
     raw = slot.segment_raw_text
     if raw is None:
         return
     raw += text
-    slot.segment_raw_text = raw if len(raw) <= _SEGMENT_RAW_MAX_CHARS else None
+    if len(raw) > _SEGMENT_RAW_MAX_CHARS:
+        slot.segment_raw_text = None
+        slot.segment_removed = {}
+        return
+    slot.segment_raw_text = raw
+    slot.segment_shown_sha.update(shown.encode("utf-8", "surrogatepass"))
+    for value, tag in removed:
+        slot.segment_removed.setdefault(value, tag)
 
 
 def _cleared_segment_text(slot: _ChatSlot) -> str:
@@ -2079,56 +2133,127 @@ def _cleared_segment_text(slot: _ChatSlot) -> str:
 
     The one way a turn drops its streamed text mid-segment
     (``assistant_text = _cleared_segment_text(slot)``), so the raw copy that
-    mirrors that text can never outlive it: records taken from a copy that
-    outlived its text would describe addresses the reader never saw.
+    mirrors that text can never outlive it: a copy that outlived its text would
+    be saved in place of text the reader never saw.
     """
-    slot.segment_raw_text = ""
+    _reset_segment_copy(slot)
     return ""
 
 
 def _redact_segment(slot: _ChatSlot, text: str) -> tuple[str, list[dict], list[dict]]:
-    """Redact one assistant segment and describe every placeholder it wrote.
+    """Redact one assistant segment as one text and describe every placeholder.
 
-    The records come out of the redaction pass because that is the last moment
-    the removed values exist: what ``slot.append`` stores is the placeholder,
-    so a later scan of the row finds only that and would describe nothing.
+    ``text`` is the segment as it streamed: each delta redacted on its own.
+    A delta boundary can cut a value, so per-delta redaction can leave pieces
+    of it (a link's query after the placeholder its first piece became). So
+    what is saved is the slot's raw copy of the same deltas, with the same
+    glued-footer reflow, redacted once as a whole: every value is intact there,
+    and the records come out of that one pass, so each describes a placeholder
+    the saved text holds.
 
-    ``text`` was already redacted delta by delta as it streamed, so a value that
-    arrived inside one delta is gone from it. The slot's raw copy of the same
-    segment still holds it, so the raw copy's records are used wherever they
-    pair with a placeholder ``text`` still carries: a link record by the domain
-    its placeholder names, the credential records by position when both texts
-    hold the same number of credential tags. A transform on ``text`` (label
-    reflow, plan-marker stripping) or a delta boundary that cut a value
-    differently changes neither pairing. Where they do not pair, ``text``'s own
-    records stand, which describe fewer placeholders but never a wrong one.
+    Fail closed: when that cannot be done with certainty, the saved text is
+    :data:`_SEGMENT_UNCHECKED_TEXT` with no records, never the raw text. That
+    is when there is no raw copy (past :data:`_SEGMENT_RAW_MAX_CHARS`), when the
+    raw copy is not the copy of ``text`` (its per-delta hash differs), or when
+    a redaction pass raises.
+
+    A pass is not monotone in its context: a value a per-delta pass removed
+    (a credential at a delta start, a piece of base64) can look harmless in the
+    whole text. When the whole-text result holds any such value (checked on
+    its own) more often than ``text``'s own redaction does, the flush fails
+    closed. The records get the same rule: a saved record that holds a value a
+    per-delta pass removed as a credential (a blocked link's ``url``, say)
+    fails the flush closed too (:func:`_records_hold_removed_credential`). The
+    raw copy is never edited to drop a value first: a mask changes what the
+    next pass matches (a tag's space ends a link before its query), so what is
+    saved is always one pass over what the model wrote, or the notice. So no
+    value a per-delta pass removed is saved where ``text``'s own redaction
+    would not hold it.
+
+    With no streamed deltas (an empty raw copy) there is nothing to cut, and
+    ``text`` itself is redacted. ``text`` is reflowed and audited here
+    (:func:`_reflow_label_and_audit`), so callers pass it as streamed.
     Returns ``(text, blocked_links, redactions)``.
     """
     raw = slot.segment_raw_text
-    slot.segment_raw_text = ""
-    redacted, blocked_links, redactions = _redact_segment_text(slot, text)
-    if not raw or raw == text:
-        return redacted, blocked_links, redactions
-    raw_redacted, raw_links, raw_redactions = _redact_segment_text(slot, raw)
-    if raw_redacted == redacted:
-        return redacted, raw_links, raw_redactions
-    seen = {r.get("url") or (r.get("domain"), r.get("path")) for r in blocked_links}
-    for record in raw_links:
-        key = record.get("url") or (record.get("domain"), record.get("path"))
-        placeholder = f"[REDACTED: suspicious URL to {record.get('domain')}]"
-        if key not in seen and placeholder in redacted:
-            if len(blocked_links) >= MAX_BLOCKED_LINKS_PER_MESSAGE:
-                break
-            blocked_links.append(record)
-            seen.add(key)
-    tags = len(_CREDENTIAL_TAG_RE.findall(redacted))
-    if tags and tags == len(_CREDENTIAL_TAG_RE.findall(raw_redacted)) == len(raw_redactions):
-        redactions = raw_redactions
-    return redacted, blocked_links, redactions
+    shown_sha = slot.segment_shown_sha
+    removed = slot.segment_removed
+    _reset_segment_copy(slot)
+    shown = _reflow_label_and_audit(slot, text)
+    if raw == "":
+        return _redact_segment_text(slot, shown)
+    if not text:
+        # Streamed deltas with no streamed text left: nothing was shown.
+        return "", [], []
+    reason = ""
+    if raw is None:
+        reason = "no raw copy (segment past the size cap)"
+    elif shown_sha.digest() != hashlib.sha256(text.encode("utf-8", "surrogatepass")).digest():
+        reason = "raw copy does not match the streamed text"
+    else:
+        try:
+            saved = _redact_segment_text(slot, reflow_and_label_glued_option_marker(raw)[0])
+            if removed:
+                per_delta, _, _ = _redact_segment_text(slot, shown)
+                # Never edit the raw copy to drop such a value: a mask changes
+                # what the next pass sees (a tag's space ends a link early).
+                # The saved text is one pass over what the model wrote, or the
+                # segment is withheld.
+                if len(removed) * (len(saved[0]) + len(per_delta)) > _SEGMENT_CHECK_MAX_WORK:
+                    reason = "too many removed values to check"
+                elif _kept_removed_values(saved[0], per_delta, removed):
+                    reason = "whole-text pass keeps a value a per-delta pass removed"
+                elif _records_hold_removed_credential(saved[1], removed):
+                    reason = "a saved record holds a value a per-delta pass removed"
+        except Exception as exc:  # noqa: BLE001 -- any failure must fail closed
+            # The type only: a message or traceback could quote the text.
+            reason = f"redaction raised {type(exc).__name__}"
+        if not reason:
+            return saved
+    logger.warning("segment flush failed closed: %s", reason)
+    return _SEGMENT_UNCHECKED_TEXT, [], []
 
 
-#: Every credential tag the redactor writes (the frontend pairs the same form).
-_CREDENTIAL_TAG_RE = re.compile(r"\[REDACTED: (?:encoded )?credential\]")
+def _kept_removed_values(saved: str, per_delta: str, removed: Iterable[str]) -> list[str]:
+    """The removed values ``saved`` holds more often than ``per_delta`` does."""
+    return [v for v in removed if saved.count(v) > per_delta.count(v)]
+
+
+#: The blocked-link record fields that quote the reply itself. Every other
+#: record field (``rule``, ``query_chars``, ``url_withheld``, a credential
+#: record's ``rule``/``label``/``ordinal``) is written by the removers.
+_BLOCKED_LINK_QUOTED_FIELDS = ("url", "path", "domain")
+
+
+def _records_hold_removed_credential(blocked_links: Iterable[Any], removed: dict[str, str]) -> bool:
+    """Whether a saved blocked-link record quotes a credential a per-delta pass removed.
+
+    The records ride in the row's ``meta`` and are shown and copied like the
+    text, so they get the same rule: no value a per-delta pass removed as a
+    credential may be saved in them. Only the fields that quote the reply
+    (:data:`_BLOCKED_LINK_QUOTED_FIELDS`) are read, and a value counts only
+    when it is a credential on its own (the credential remover changes it
+    alone), so a short piece a delta cut off a ``token=`` value does not
+    match a field by chance. A blocked address is expected in a record, so
+    only values tagged :data:`REDACTED_CREDENTIAL_TAG` are checked. A check
+    that would pass :data:`_SEGMENT_CHECK_MAX_WORK` answers True (fail closed)
+    without scanning.
+    """
+    secrets = [v for v, tag in removed.items() if tag == REDACTED_CREDENTIAL_TAG]
+    if not secrets:
+        return False
+    fields = [
+        value
+        for record in blocked_links
+        if isinstance(record, dict)
+        for key in _BLOCKED_LINK_QUOTED_FIELDS
+        if isinstance(value := record.get(key), str)
+    ]
+    if len(secrets) * sum(len(f) for f in fields) > _SEGMENT_CHECK_MAX_WORK:
+        return True
+    return any(
+        redact_credentials(v)[0] != v for v in secrets if any(v in field for field in fields)
+    )
 
 
 def _redact_segment_text(slot: _ChatSlot, text: str) -> tuple[str, list[dict], list[dict]]:
@@ -2270,7 +2395,8 @@ def _flush_segment(
     # stored transcript once, without touching the parse grammar. The moved text
     # is labelled as the assistant's own output and the event is audited: a
     # model that later re-reads the line must not take it for an instruction.
-    assistant_text = _reflow_label_and_audit(slot, assistant_text)
+    # _redact_segment applies it (_reflow_label_and_audit) to both the streamed
+    # text and the raw copy it saves.
     redacted, blocked_links, redactions = _redact_segment(slot, assistant_text)
     # Persist as assistant message. Broadcast is kept enabled so that
     # other tabs viewing the same slot receive the finalized text.
@@ -6955,9 +7081,9 @@ async def _run_chat(
     # Rolling-buffer redactor for the live chat_chunk wire stream. Per-chunk
     # redaction misses a credential split across streaming boundaries;
     # this withholds the trailing credential-class run until it is confirmed safe
-    # so raw fragments never reach WS/SSE consumers. assistant_text (the source
-    # for the final _flush_segment redaction) is accumulated independently and is
-    # unaffected. Reset per segment via _flush_text_stream / _wsred.reset().
+    # so raw fragments never reach WS/SSE consumers. assistant_text and the
+    # slot's raw segment copy (what _flush_segment redacts as one text and
+    # saves) are accumulated independently and are unaffected. Reset per segment via _flush_text_stream / _wsred.reset().
     # Deliberately NOT an owner-view seam: this wire stream fans to every
     # connected dashboard client, owner or not, and the finalized text is
     # redacted before it is appended, so the owner's credential-redaction switch
@@ -7017,14 +7143,14 @@ async def _run_chat(
         # leaves it in ``assistant_text``, so a cancel landing after it (a late
         # Stop, the turn ceiling's task cancel) must not save it a second time.
         if turn.assistant_text and not turn._reply_flushed:
-            # Same glued-marker repair as _flush_segment: the interrupted body is
-            # the same accumulated text, and it is rendered by the same grammar.
-            body = _reflow_label_and_audit(slot, turn.assistant_text)
             slot.purge_chunks()
+            # Same glued-marker repair and whole-text redaction as
+            # _flush_segment (both inside _redact_segment): the interrupted body
+            # is the same accumulated text, rendered by the same grammar.
             # Records come out of the same pass for the reason _redact_segment
             # gives: after this line only the placeholder exists, so an
             # interrupted reply would otherwise lose what it explains for good.
-            _redacted, _blocked, _redactions = _redact_segment(slot, body)
+            _redacted, _blocked, _redactions = _redact_segment(slot, turn.assistant_text)
             _note_reply_row(
                 slot,
                 slot.append(
@@ -7686,7 +7812,7 @@ async def _run_chat(
     _turn_started = time.monotonic()
     # A credential in this turn's reply is traced only to this turn's tools.
     slot.credential_evidence.clear()
-    slot.segment_raw_text = ""
+    _reset_segment_copy(slot)
     slot.segment_message_id = ""
     # session_id -> {started, done, agent, task} for native kiro-cli subagents,
     # reconciled from `_kiro.dev/subagent/list_update` (one card per sub-agent).
@@ -10769,11 +10895,10 @@ async def _run_chat(
                 # would have granted can never apply. Every other pass still runs
                 # per delta; the live wire goes through `_wsred`, which never
                 # exempts; with the empty default prefix set nothing changes.
-                safe_chunk, _ = redact_exfiltration_urls(event.text)
-                safe_chunk, _ = redact_credentials(safe_chunk, defer_token_param=True)
+                safe_chunk, _removed = _redact_delta(event.text)
                 if event.message_id:
                     slot.segment_message_id = event.message_id
-                _accumulate_segment_raw(slot, event.text)
+                _accumulate_segment_raw(slot, event.text, safe_chunk, _removed)
                 turn.assistant_text += safe_chunk
                 if event.control_notice:
                     # A backend control notice that arrived as assistant text

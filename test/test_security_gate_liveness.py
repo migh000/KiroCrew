@@ -362,7 +362,12 @@ def _url_payload_command(n: int) -> str:
 #: made a text that repeats the header quadratic. 56 lines are the new ``pem_scan`` module
 #: (the spellings and the last-END-marker lookup) and 25 the choice between the two
 #: patterns in ``_credential_search``. No credential branch, match or pass moved.
-_PACKAGE_LINE_BUDGET = 29_573
+#:
+#: Raised again, from 29,573, for the chat segment save: the link pass can hand
+#: back the addresses it replaced and the credential records take the per-delta
+#: ``defer_token_param``, so the save can check each value a streamed delta's
+#: redaction removed. No matcher moved.
+_PACKAGE_LINE_BUDGET = 29_582
 
 #: Ceiling on any ONE file in the package. This is what the bound is really for --
 #: a package total says nothing about a single file growing back into a second

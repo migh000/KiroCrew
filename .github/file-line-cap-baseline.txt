@@ -170,7 +170,6 @@
 2170 test/test_aws_control_backup_composition_contract.py
 4193 test/test_aws_control_routes.py
 3564 test/test_browser_cli_view.py
-2032 test/test_channel_folders.py
 2002 test/test_channel_turns.py
 2336 test/test_chat_agent_selection.py
 2475 test/test_chat_mirror.py
@@ -217,7 +216,6 @@
 2539 test/test_governance_policy.py
 3102 test/test_handlers_memory_coverage.py
 2261 test/test_handlers_messaging_coverage.py
-2026 test/test_handlers_taskrunner_coverage.py
 6945 test/test_history.py
 2809 test/test_history_consolidation_retry.py
 2547 test/test_history_locking_remediation.py
@@ -271,7 +269,6 @@
 3048 test/test_security_conductor_ledger.py
 2501 test/test_security_conductor_scripts.py
 2055 test/test_security_conductor_verify_fix.py
-2034 test/test_security_path_resolve_bounded.py
 5509 test/test_sel.py
 9530 test/test_session.py
 6171 test/test_session_control.py
@@ -283,7 +280,6 @@
 6415 test/test_session_transfer.py
 2548 test/test_session_usage.py
 2185 test/test_side.py
-2032 test/test_skill_browser.py
 2396 test/test_skill_trust_store.py
 3082 test/test_skills.py
 11406 test/test_slack_gateway.py

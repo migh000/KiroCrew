@@ -80,7 +80,6 @@
 2788 src/kiro_crew/dashboard/handlers/messaging.py
 3586 src/kiro_crew/dashboard/handlers/prompts.py
 2807 src/kiro_crew/dashboard/handlers/security.py
-5451 src/kiro_crew/dashboard/handlers/sessions.py
 2895 src/kiro_crew/dashboard/handlers/terminal.py
 3358 src/kiro_crew/dashboard/handlers/updates.py
 2807 src/kiro_crew/dashboard/handlers/usage.py

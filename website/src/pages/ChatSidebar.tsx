@@ -73,7 +73,7 @@ import { useHoldPinnedHeaderOnCollapse } from './chat-sidebar/stickyCollapse'
 import { useFolderChatCreate, useSessionCreate } from './chat-sidebar/create'
 export { FOLDER_BODY_INSET_PX, FOLDER_BODY_CLS, BOARD_FOLDER_BODY_CLS, SIDEBAR_TEXT_CONTROL_CLS, STALE_TOGGLE_CLS } from './chat-sidebar/chrome'
 export { connectedChannelLinks } from './chat-sidebar/SessionRow'
-import type { ChatSidebarProps, SidebarScope } from './chat-sidebar/scope'
+import type { ChatSidebarProps, FolderModalTarget, SidebarScope } from './chat-sidebar/scope'
 import { createLaneRows } from './chat-sidebar/laneRows'
 export { SIDEBAR_DISPLACEMENT_WINDOW } from './chat-sidebar/laneRows'
 import { createFolderBlocks } from './chat-sidebar/folderBlocks'
@@ -255,9 +255,7 @@ function ChatSidebar({
   // sidebar root, so — unlike the inline inputs it replaced — it needs no column
   // scope: a folder rendered in several board columns can only have one modal.
   // `parentId` is the fixed destination for 'create' ('' = top level).
-  const [folderModal, setFolderModal] = useState<
-    { mode: 'create'; parentId: string } | { mode: 'edit'; folderId: string } | null
-  >(null)
+  const [folderModal, setFolderModal] = useState<FolderModalTarget | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>(readSessionSortKey)
   const { lane, setLanePersisted, setFlatView } = useSidebarLane()
   /** Derived, so every existing `flatView` read site keeps its exact meaning. */

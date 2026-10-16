@@ -6931,7 +6931,13 @@
       "tags_loading_hint": "正在加载标签…",
       "tags_error_hint": "无法加载标签。",
       "tags_retry": "重试",
-      "top_level": "顶层"
+      "top_level": "顶层",
+      "new_project": "新建项目",
+      "create_project": "创建项目",
+      "new_project_leaf": "新项目",
+      "project_settings": "项目设置",
+      "project_create_hint": "项目的第一个会话在 {{agent}} 上打开，项目中的每个会话都在它上面运行。",
+      "project_agent_locked_hint": "此项目中的会话在 {{agent}} 上运行，因此无需选择智能体。"
     },
     "folderSuggestionCard": {
       "folder_suggestion": "文件夹建议",
@@ -12512,7 +12518,8 @@
       "broadcast_col_result": "结果",
       "broadcast_open_unknown": "未确认 · 打开",
       "broadcast_delivery_hint": "不会打断正在进行的工作：运行中的会话在当前工具调用结束后读到；空闲的会话开始新一轮。",
-      "broadcast_retry": "重试 {{n}} 个失败的"
+      "broadcast_retry": "重试 {{n}} 个失败的",
+      "new_project": "新建项目"
     },
     "connectionsPage": {
       "action_failed": "操作失败：{{error}}",

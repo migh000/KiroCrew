@@ -16,6 +16,7 @@ from kiro_crew.dashboard.chat_persistence import (
     _validate_turn_timeout_secs,
 )
 from kiro_crew.dashboard.chat_utils import redact_display_content
+from kiro_crew.dashboard.project_folders import project_admits_agent
 from kiro_crew.dashboard.slot_ownership import app_holds_gateway_key
 from kiro_crew.dashboard.state import (
     DashboardState,
@@ -441,6 +442,11 @@ def chat_folder_for_minted_tab(state: DashboardState, job: "CronJob") -> str:
         except Exception:
             logger.debug("SEL logging failed for a missing cron chat folder", exc_info=True)
         return ""
+    if not _cron_admitted(state, job, target):
+        # A Project's chats run on its conductor; a scheduled run on another
+        # agent is not one of them, so its tab lands unfiled.
+        logger.info("Cron '%s': chat folder %s is a project; tab lands unfiled", job.name, target)
+        return ""
     return target
 
 
@@ -511,8 +517,21 @@ def persist_cron_chat_folder(state: DashboardState, job: "CronJob", slot: Any) -
     target = chat_folder_for_minted_tab(state, job)
     if not target:
         return
+    _schedule_cron_tab_placement(state, job, slot, placed=target, restore_to="")
+
+
+def _cron_admitted(state: DashboardState, job: "CronJob", folder_id: str) -> bool:
+    """Whether the job's agent may have its tab in *folder_id* (see project_folders)."""
+    agent, kind = (job.member_id, "member") if job.member_id else (job.agent_id, "")
+    return project_admits_agent(state._folders, folder_id, agent, kind)
+
+
+def _schedule_cron_tab_placement(
+    state: DashboardState, job: "CronJob", slot: Any, *, placed: str, restore_to: str
+) -> None:
+    """Run :func:`_commit_cron_tab_placement` on a tracked background task."""
     task = asyncio.create_task(
-        _commit_cron_tab_placement(state, job, slot, placed=target, restore_to="")
+        _commit_cron_tab_placement(state, job, slot, placed=placed, restore_to=restore_to)
     )
     state._background_tasks.add(task)
     task.add_done_callback(state._background_tasks.discard)
@@ -534,6 +553,10 @@ async def move_cron_job_tab(
         return
     slot = state.get_slot(f"cron-{job.id}")
     if slot is None or getattr(slot, "folder_id", "") != previous_folder_id:
+        return
+    if not _cron_admitted(state, job, new_folder_id):
+        # As at mint (`chat_folder_for_minted_tab`): a run on another agent is
+        # not a Project chat, so its tab is not moved into one.
         return
     await _commit_cron_tab_placement(
         state, job, slot, placed=new_folder_id, restore_to=previous_folder_id
@@ -628,6 +651,10 @@ def _bind_cron_slot(
     _sync_dashboard_slots(state)
     if minted:
         persist_cron_chat_folder(state, job, slot)
+    elif getattr(slot, "folder_id", "") and not _cron_admitted(state, job, slot.folder_id):
+        # The job's agent changed since its tab was filed in a Project: runs on
+        # the new agent are not Project chats, so the tab leaves it.
+        _schedule_cron_tab_placement(state, job, slot, placed="", restore_to=slot.folder_id)
     return slot
 
 

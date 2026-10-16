@@ -25,6 +25,8 @@ import { PrivateChatRow } from './PrivateChatRow'
 import { ParentFolderDropTarget, SortableSubfolderBlock } from './dnd/targets'
 import type { Slot } from './types'
 import { detectFolderConductor } from './folderConductor'
+import { projectLineageRows } from './projectLineage'
+import { projectRootId } from '../../utils/folderAgent'
 import { DisclosureChevron, FOLDER_BODY_CLS, FOLDER_BODY_OPEN_PADDING, FOLDER_ROW_STICKY_Z, PinnedSessionDivider, isOpenInTabModifierClick } from './chrome'
 import type { LaneRows } from './laneRows'
 import type { SidebarScope } from './scope'
@@ -464,7 +466,7 @@ export function createFolderBlocks(shell: SidebarScope & LaneRows) {
         className={`folder-row folder-row-sticky group sticky flex items-center gap-2 px-3.5 py-1.5 rounded-md text-sm text-muted transition-all${emptyRow ? '' : ' hover:text-text hover:bg-bg-hover'} ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}${folderFlash ? ` session-reveal-flash${folderFlash === 'fade' ? ' session-reveal-flash-fade' : ''}` : ''}`}>
         {editingId === folder.id && editScope === 'list' ? (
           <>
-            <FolderGlyph color={folder.color} icon={folder.icon} size={14} open={!collapsed} />
+            <FolderGlyph color={folder.color} icon={folder.icon} size={14} open={!collapsed} project={folder.kind === 'project'} />
             <Input ref={folderEditInputRef} className="flex-1 py-0.5 text-[13px] min-w-0" value={editName} onChange={e => setEditName(e.target.value)} onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} {...ime.bindEnter<HTMLInputElement>({ onEnter: () => renameCommit(folder.id, editName), onEscape: () => setEditingId(null), onBlur: () => renameCommit(folder.id, editName) })} />
             <span className="text-[11px] text-muted tabular-nums shrink-0">{count}</span>
           </>
@@ -517,6 +519,7 @@ export function createFolderBlocks(shell: SidebarScope & LaneRows) {
                *  inert row - this product's "click to expand" affordance on a row
                *  that cannot expand. An inert row is always drawn open. */}
               <FolderGlyph color={folder.color} icon={folder.icon} size={14} open={!collapsed || emptyRow}
+                project={folder.kind === 'project'}
                 className={emptyRow ? 'shrink-0 text-muted/40 transition-colors' : undefined}
                 testId={`folder-collapse-${folder.id}`} />
               {/* Double-click rename is a mouse-only power shortcut; the accessible
@@ -778,7 +781,10 @@ export function createFolderBlocks(shell: SidebarScope & LaneRows) {
      * this folder draws. Null while a filter conceals the root, which is also
      * why the row it returns is always one of `allChildSlots` below.
      */
-    const folderConductorSlot = folderConductorPin ? folderConductorOf(folder.id) : null
+    // Inside a Project the body is drawn as the lineage tree instead (below), which
+    // already puts each conductor above the workers it opened, so the pin stands down.
+    const inProject = !!projectRootId(folders, folder.id)
+    const folderConductorSlot = folderConductorPin && !inProject ? folderConductorOf(folder.id) : null
     // What the body draws: every row in the folder except the pinned one. The
     // folder HEADER's count still reads `rowsIn` and so still counts the
     // conductor -- it says how many sessions are filed here, and that is still
@@ -870,19 +876,31 @@ export function createFolderBlocks(shell: SidebarScope & LaneRows) {
         {renderSessionRow(folderConductorSlot, depth + 1, false, treeChildScope, treeChildScope, treeChildContainer, undefined, true)}
       </div>
     )
-    freshChildSlots.forEach((s, i) => {
+    // A Project draws its rows as who-opened-whom: each conductor, then the workers
+    // it opened (filed beside it by the server), one indent per generation. Every
+    // other folder keeps its rows exactly as the lane ordered them.
+    const laneRows = inProject
+      ? projectLineageRows(freshChildSlots)
+      : freshChildSlots.map(slot => ({ slot, depth: 0 }))
+    const laneSlots = inProject ? laneRows.map(r => r.slot) : freshChildSlots
+    laneRows.forEach(({ slot: s, depth: lineageDepth }, i) => {
       const isActive = isActiveRow(s)
-      const nextIsActive = isActiveRow(freshChildSlots[i + 1])
-      const showDivider = i < freshChildSlots.length - 1 && !isActive && !nextIsActive
-        && !startsAutomaticSection(freshChildSlots, i + 1)
-      if (startsAutomaticSection(freshChildSlots, i)) {
+      const nextIsActive = isActiveRow(laneSlots[i + 1])
+      const showDivider = i < laneSlots.length - 1 && !isActive && !nextIsActive
+        && !startsAutomaticSection(laneSlots, i + 1)
+      if (startsAutomaticSection(laneSlots, i)) {
         childNodes.push(<PinnedSessionDivider key={`pinned-divider-${folder.id}`} />)
       }
-      childNodes.push(renderSessionRow(s, depth + 1, showDivider, treeChildScope, treeChildScope, treeChildContainer))
+      // The conductor lane's row view, indent only: no chevron (a project shows its
+      // workers open) and no citation glyph (the creator is the row above).
+      const nested = lineageDepth > 0
+        ? { depth: lineageDepth, childCount: 0, expanded: true, aggregate: null, orphanOf: null, citesParent: null, anchorOnly: false }
+        : undefined
+      childNodes.push(renderSessionRow(s, depth + 1, showDivider, treeChildScope, treeChildScope, treeChildContainer, nested))
     })
     if (!searchRanked && staleExpanded.has(folder.id)
       && staleChildSlots.length > 0 && freshChildSlots.length > 0
-      && pinned.has(freshChildSlots[freshChildSlots.length - 1].key)) {
+      && pinned.has(laneSlots[laneSlots.length - 1].key)) {
       childNodes.push(<PinnedSessionDivider key={`pinned-divider-stale-${folder.id}`} />)
     }
     const staleSection = renderStaleSection(folder.id, staleChildSlots, depth + 1, folder.name)

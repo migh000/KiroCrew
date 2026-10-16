@@ -2,7 +2,7 @@
  *  toggle, cleanup, model switch, tags) and the split New button with its create
  *  menu (private chats, import, Crew Members, folders, chat in a folder or on a
  *  crew). */
-import { Plus, Monitor, FolderPlus, FolderX, MessageSquarePlus, Folder, ChevronRight, ChevronDown, BrushCleaning, MoreVertical, Tag as TagIcon, Columns3, Loader2, Cpu, Users, Server, Megaphone } from 'lucide-react'
+import { Plus, Monitor, FolderPlus, FolderKanban, FolderX, MessageSquarePlus, Folder, ChevronRight, ChevronDown, BrushCleaning, MoreVertical, Tag as TagIcon, Columns3, Loader2, Cpu, Users, Server, Megaphone } from 'lucide-react'
 import ErrorNotice, { ErrorNoticeMenuItem } from '../../components/ErrorNotice'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '../../components/ui/dropdown-menu'
 import { LIST_HEADER_CLS, LIST_TITLE_CLS } from '../../components/listShell'
@@ -219,6 +219,13 @@ export function renderSidebarHeader(shell: SidebarScope): React.ReactNode {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem data-testid="new-folder" {...offlineMenuRow(connected, i18nT('utils.offline.create_folders'), i18nT('pages.chatSidebar.new_folder'), () => { setFolderModal({ mode: 'create', parentId: '' }) })} {...uiLocation('sessions.create-menu.new-folder')}>
                   <FolderPlus size={14} className="text-muted" /> {i18nT('pages.chatSidebar.new_folder')}
+                </DropdownMenuItem>
+                {/* New > Project: a folder whose chats all run on the conductor
+                 *  (see utils/folderAgent PROJECT_AGENT). Beside New folder because
+                 *  it creates one, with its own glyph because to the person it is
+                 *  a Project, not a folder they configure into one. */}
+                <DropdownMenuItem data-testid="new-project" {...offlineMenuRow(connected, i18nT('utils.offline.create_folders'), i18nT('pages.chatSidebar.new_project'), () => { setFolderModal({ mode: 'create', parentId: '', kind: 'project' }) })}>
+                  <FolderKanban size={14} className="text-muted" /> {i18nT('pages.chatSidebar.new_project')}
                 </DropdownMenuItem>
                 {folders.length > 0 && (() => {
                   const folderRows = (() => {

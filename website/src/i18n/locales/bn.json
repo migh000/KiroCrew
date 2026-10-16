@@ -7052,7 +7052,13 @@
       "tags_loading_hint": "ট্যাগ লোড হচ্ছে…",
       "tags_error_hint": "ট্যাগ লোড করা যায়নি।",
       "tags_retry": "আবার চেষ্টা করুন",
-      "top_level": "সর্বোচ্চ স্তর"
+      "top_level": "সর্বোচ্চ স্তর",
+      "new_project": "নতুন প্রজেক্ট",
+      "create_project": "প্রজেক্ট তৈরি করুন",
+      "new_project_leaf": "নতুন প্রজেক্ট",
+      "project_settings": "প্রজেক্ট সেটিংস",
+      "project_create_hint": "প্রজেক্টের প্রথম চ্যাট {{agent}}-এ খোলে, এবং প্রজেক্টের প্রতিটি চ্যাট সেটিতেই চলে।",
+      "project_agent_locked_hint": "এই প্রজেক্টের চ্যাটগুলি {{agent}}-এ চলে, তাই কোনো এজেন্ট বেছে নিতে হয় না।"
     },
     "folderSuggestionCard": {
       "folder_suggestion": "ফোল্ডার প্রস্তাব",
@@ -12725,7 +12731,8 @@
       "broadcast_col_result": "ফলাফল",
       "broadcast_open_unknown": "নিশ্চিত নয় · খোলো",
       "broadcast_delivery_hint": "চলমান কাজ থামে না: চালু টার্ন বর্তমান টুল কলের পরে এটি পড়ে; অলস সেশন নতুন টার্ন শুরু করে।",
-      "broadcast_retry": "ব্যর্থ {{n}}টি আবার পাঠাও"
+      "broadcast_retry": "ব্যর্থ {{n}}টি আবার পাঠাও",
+      "new_project": "নতুন প্রজেক্ট"
     },
     "connectionsPage": {
       "action_failed": "অ্যাকশন ব্যর্থ: {{error}}",

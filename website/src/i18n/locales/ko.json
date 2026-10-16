@@ -6931,7 +6931,13 @@
       "tags_loading_hint": "태그를 불러오는 중…",
       "tags_error_hint": "태그를 불러오지 못했습니다.",
       "tags_retry": "다시 시도",
-      "top_level": "최상위"
+      "top_level": "최상위",
+      "new_project": "새 프로젝트",
+      "create_project": "프로젝트 만들기",
+      "new_project_leaf": "새 프로젝트",
+      "project_settings": "프로젝트 설정",
+      "project_create_hint": "프로젝트의 첫 채팅은 {{agent}}에서 열리고, 프로젝트의 모든 채팅이 여기에서 실행됩니다.",
+      "project_agent_locked_hint": "이 프로젝트의 채팅은 {{agent}}에서 실행되므로 선택할 에이전트가 없습니다."
     },
     "folderSuggestionCard": {
       "folder_suggestion": "폴더 제안",
@@ -12512,7 +12518,8 @@
       "broadcast_col_result": "결과",
       "broadcast_open_unknown": "확인 안 됨 · 열기",
       "broadcast_delivery_hint": "진행 중인 작업은 중단되지 않아요. 실행 중인 턴은 현재 도구 호출이 끝난 뒤 읽고, 쉬는 세션은 새 턴을 시작해요.",
-      "broadcast_retry": "실패한 {{n}}개 다시 보내기"
+      "broadcast_retry": "실패한 {{n}}개 다시 보내기",
+      "new_project": "새 프로젝트"
     },
     "connectionsPage": {
       "action_failed": "작업에 실패했습니다: {{error}}",

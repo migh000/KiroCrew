@@ -7173,7 +7173,13 @@
       "tags_loading_hint": "Cargando etiquetas…",
       "tags_error_hint": "No se pudieron cargar las etiquetas.",
       "tags_retry": "Reintentar",
-      "top_level": "Nivel superior"
+      "top_level": "Nivel superior",
+      "new_project": "Nuevo proyecto",
+      "create_project": "Crear proyecto",
+      "new_project_leaf": "nuevo proyecto",
+      "project_settings": "Ajustes del proyecto",
+      "project_create_hint": "El primer chat del proyecto se abre en {{agent}}, y todos los chats del proyecto se ejecutan en él.",
+      "project_agent_locked_hint": "Los chats de este proyecto se ejecutan en {{agent}}, así que no hay agente que elegir."
     },
     "folderSuggestionCard": {
       "folder_suggestion": "Sugerencia de carpeta",
@@ -12938,7 +12944,8 @@
       "broadcast_col_result": "Resultado",
       "broadcast_open_unknown": "Sin confirmar · abrir",
       "broadcast_delivery_hint": "No se interrumpe ningún trabajo en curso: un turno activo lo lee tras la llamada de herramienta actual; una sesión inactiva empieza un turno nuevo.",
-      "broadcast_retry": "Reintentar {{n}} fallidos"
+      "broadcast_retry": "Reintentar {{n}} fallidos",
+      "new_project": "Nuevo proyecto"
     },
     "connectionsPage": {
       "action_failed": "La acción falló: {{error}}",

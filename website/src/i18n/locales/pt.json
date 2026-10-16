@@ -7173,7 +7173,13 @@
       "tags_loading_hint": "Carregando tags…",
       "tags_error_hint": "Não foi possível carregar as tags.",
       "tags_retry": "Tentar novamente",
-      "top_level": "Nível superior"
+      "top_level": "Nível superior",
+      "new_project": "Novo projeto",
+      "create_project": "Criar projeto",
+      "new_project_leaf": "novo projeto",
+      "project_settings": "Configurações do projeto",
+      "project_create_hint": "O primeiro chat do projeto abre no {{agent}}, e todo chat do projeto roda nele.",
+      "project_agent_locked_hint": "Os chats deste projeto rodam no {{agent}}, então não há agente para escolher."
     },
     "folderSuggestionCard": {
       "folder_suggestion": "Sugestão de pasta",
@@ -12938,7 +12944,8 @@
       "broadcast_col_result": "Resultado",
       "broadcast_open_unknown": "Não confirmado · abrir",
       "broadcast_delivery_hint": "Nenhum trabalho em andamento é interrompido: um turno ativo lê a mensagem após a chamada de ferramenta atual; uma sessão ociosa começa um novo turno.",
-      "broadcast_retry": "Tentar de novo {{n}} com falha"
+      "broadcast_retry": "Tentar de novo {{n}} com falha",
+      "new_project": "Novo projeto"
     },
     "connectionsPage": {
       "action_failed": "Falha na ação: {{error}}",

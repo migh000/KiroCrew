@@ -7052,7 +7052,13 @@
       "tags_loading_hint": "टैग लोड हो रहे हैं…",
       "tags_error_hint": "टैग लोड नहीं हो सके।",
       "tags_retry": "पुनः प्रयास करें",
-      "top_level": "सर्वोच्च स्तर"
+      "top_level": "सर्वोच्च स्तर",
+      "new_project": "नया प्रोजेक्ट",
+      "create_project": "प्रोजेक्ट बनाएँ",
+      "new_project_leaf": "नया प्रोजेक्ट",
+      "project_settings": "प्रोजेक्ट सेटिंग्स",
+      "project_create_hint": "प्रोजेक्ट की पहली चैट {{agent}} पर खुलती है, और प्रोजेक्ट की हर चैट उसी पर चलती है।",
+      "project_agent_locked_hint": "इस प्रोजेक्ट की चैट {{agent}} पर चलती हैं, इसलिए कोई एजेंट चुनना नहीं है।"
     },
     "folderSuggestionCard": {
       "folder_suggestion": "फ़ोल्डर सुझाव",
@@ -12725,7 +12731,8 @@
       "broadcast_col_result": "नतीजा",
       "broadcast_open_unknown": "पुष्टि नहीं · खोलो",
       "broadcast_delivery_hint": "चल रहा काम नहीं रुकता: चालू टर्न इसे मौजूदा टूल कॉल के बाद पढ़ता है; खाली सेशन नया टर्न शुरू करता है।",
-      "broadcast_retry": "{{n}} विफल फिर से भेजो"
+      "broadcast_retry": "{{n}} विफल फिर से भेजो",
+      "new_project": "नया प्रोजेक्ट"
     },
     "connectionsPage": {
       "action_failed": "कार्रवाई विफल: {{error}}",

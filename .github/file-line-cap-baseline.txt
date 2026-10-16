@@ -201,7 +201,6 @@
 11203 test/test_denied_commands_security.py
 2194 test/test_deploy_web_handlers.py
 4648 test/test_dev_fleet_server_coverage.py
-2020 test/test_discord_resumed_busy.py
 2240 test/test_eager_spawn.py
 2861 test/test_embeddings.py
 2417 test/test_ephemeral_sessions.py
@@ -257,7 +256,6 @@
 8519 test/test_pod.py
 3225 test/test_portability.py
 2215 test/test_publish_sync.py
-2016 test/test_push_branch_gate.py
 4559 test/test_push_guard.py
 2147 test/test_recovery_l1_chat_runner.py
 5775 test/test_remote_crew_chaining.py
@@ -293,7 +291,6 @@
 11572 test/test_source_providers.py
 2641 test/test_spawn_audit.py
 4536 test/test_spec_builder_routes_coverage.py
-2008 test/test_steer_requeue.py
 2045 test/test_stop_clears_only_its_own_sender.py
 2211 test/test_stt_engine.py
 3093 test/test_subagent.py
@@ -311,7 +308,6 @@
 4674 test/test_token_auth.py
 4193 test/test_transcribe.py
 5831 test/test_vector_memory.py
-2014 test/test_vector_memory_coverage.py
 2549 test/test_wake_judge_feedback.py
 3521 test/test_webex_dispatch.py
 2006 test/test_webhooks_api.py

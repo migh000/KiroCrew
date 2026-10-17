@@ -16,6 +16,7 @@ import { addNotification } from '../../../store/notificationsSlice'
 import { isInterceptedSlashCommand, interceptSlashCommand } from '../ChatInput'
 import { api } from '../../../api/client'
 import { resolveAskAfterSend } from '../../../lib/resolveAskAfterSend'
+import { newChatAgent } from '../../../lib/crewMode'
 import { uniqueNotificationTs } from './notificationTs'
 import { PREFILL_STORAGE_KEY } from '../../../utils/navIntent'
 import { isComposerSendHeld } from '../../../utils/composerSendHolds'
@@ -359,7 +360,9 @@ export function useComposerSend({
         // namespace when the slot kind is unset.
         // A project picked on the fresh composer is applied right after the
         // create below, so the server must not make a session folder for it.
-        created = await dispatch(createSlot({ agent: pendingAgentRef.current || undefined, agent_kind: pendingAgentRef.current ? pendingAgentKindRef.current : undefined, model: pendingModelRef.current || undefined, mode: modeRef.current, ...(pendingProjectRef.current ? { sessionFolder: false } : {}) })).unwrap()
+        // A plain create (nothing pending, no page mode) may start in Crew Mode
+        // per Settings (lib/crewMode).
+        created = await dispatch(createSlot({ ...(pendingAgentRef.current ? { agent: pendingAgentRef.current, agent_kind: pendingAgentKindRef.current } : modeRef.current ? {} : newChatAgent()), model: pendingModelRef.current || undefined, mode: modeRef.current, ...(pendingProjectRef.current ? { sessionFolder: false } : {}) })).unwrap()
       } catch (e: unknown) {
         sendingRef.current = false
         if (isolated) {

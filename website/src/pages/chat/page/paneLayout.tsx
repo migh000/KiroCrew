@@ -13,6 +13,7 @@ import { useSidePanelDock } from '../../../hooks/useSidePanelDock'
 import { parseStoredSidebarWidth, SIDEBAR_MAX } from '../sidebarWidth'
 import { focusComposerAfter, focusComposer } from '../composerFocus'
 import { resolveFolderAgent, resolveFolderProjectDir, isStaleProjectDirError } from '../../../utils/folderAgent'
+import { newChatAgent } from '../../../lib/crewMode'
 import { PanelLeftLight, PanelLeftSolid } from '../../../components/icons/panels'
 import { sidePanelDockMotion } from '../sidePanelMount'
 import { errMessage } from '../../../utils/thunkError'
@@ -202,9 +203,14 @@ export function usePanelLayout({
     // `focusComposerAfter`, not a bare dispatch + rAF: there is one composer and
     // it is bound to the ACTIVE slot, so focusing before creation fulfils puts
     // the caret on the old session and loses whatever is typed. See the module.
-    // Agent-less: the server stamps the default custom agent (a template).
-    focusComposerAfter(dispatch(createSlot({ mode: mode || '' })).unwrap())
-  }, [dispatch, mode, flyout])
+    // Agent-less: the server stamps the default custom agent (a template),
+    // unless Settings starts new chats in Crew Mode (lib/crewMode).
+    const created = dispatch(createSlot({ ...(mode ? {} : newChatAgent()), mode: mode || '' })).unwrap()
+    // The flyout has closed, so a refused create reports through the page's
+    // notice, worded as the phone's New chat below words it.
+    created.catch((error: unknown) => showActionError(errMessage(error) || i18nT('pages.chatPage.unknown_error'), i18nT('pages.chatPage.could_not_start_a_new_session')))
+    focusComposerAfter(created)
+  }, [dispatch, mode, flyout, showActionError])
 
   // Force the list open when there is nothing in it, so a user with no sessions
   // still has the surface that creates one. Skipped while expand mode owns the
@@ -307,7 +313,7 @@ export function usePanelLayout({
     setMobileNewSessionBusy(true)
     try {
       await dispatch(createSlot({
-        agent,
+        ...(mode ? { agent } : newChatAgent(agent)),
         mode: mode || '',
         ...(folderId ? { folder_id: folderId } : {}),
         ...(project ? { project } : {}),

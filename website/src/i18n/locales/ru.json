@@ -10080,6 +10080,32 @@
       "fewerRows": "меньше строк",
       "moreRows": "больше строк"
     },
+    "crewMode": {
+      "chip_off": "Crew Mode",
+      "chip_on": "Crew Mode включён",
+      "chip_hint_off": "Включи Crew Mode. Твой дирижёр отправляет каждую задачу в отдельный чат.",
+      "chip_hint_on": "Выключи Crew Mode и вернись к агенту по умолчанию.",
+      "title": "Crew Mode",
+      "tagline_lead": "Ты ставишь цель.",
+      "tagline_strong": "Твоя команда делает работу.",
+      "does_new_chat": "Открывает чаты",
+      "does_pass_notes": "Делится новостями",
+      "does_take_asks": "Принимает задачи",
+      "does_check_in": "Показывает ход",
+      "board_title": "Твоя команда",
+      "board_preview": "Пример",
+      "sample_question": "Какой день тебе подходит?",
+      "sample_answer_a": "Сегодня",
+      "sample_answer_b": "Завтра",
+      "sample_email": "Письмо",
+      "sample_layout": "Вёрстка",
+      "sample_room": "Комната",
+      "sample_screenshot": "Скриншот",
+      "state_done": "Готово",
+      "state_working": "В работе",
+      "state_needs_you": "Ждёт тебя",
+      "state_waiting": "Ожидает"
+    },
     "guideLayer": {
       "region_label": "Руководство",
       "close": "Закрыть",
@@ -19473,6 +19499,10 @@
       "diffLayout": {
         "description": "Показывает старый и новый код в двух столбцах; при отключении — один объединённый столбец. Изменение здесь или на любом различии применяется везде.",
         "label": "Раздельные различия (рядом)"
+      },
+      "defaultCrewMode": {
+        "description": "Новые чаты с агентом по умолчанию начинаются в Crew Mode: дирижёр открывает отдельные чаты для работы и отчитывается здесь. Существующие чаты не меняются.",
+        "label": "Включать Crew Mode для новых сеансов по умолчанию"
       }
     },
     "display": {

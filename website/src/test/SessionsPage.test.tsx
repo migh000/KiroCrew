@@ -3,6 +3,7 @@ import { screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { Routes, Route, useSearchParams } from 'react-router-dom'
 import SessionsPage, { recencyGroup } from '../pages/SessionsPage'
 import { renderWithProviders, createTestStore } from './helpers'
+import { queryClient } from '../api/queryClient'
 import type { ChatSlot, ChatTag } from '../types'
 
 // The real ChatPage activates the session named by ?sid= (the path slug is
@@ -255,6 +256,27 @@ describe('SessionsPage', () => {
       await waitFor(() => expect(screen.getByTestId('chat-target')).toBeInTheDocument())
     } finally {
       fetchMock.mockRestore()
+    }
+  })
+
+  it('starts the New session in Crew Mode when Settings turns that on', async () => {
+    vi.useRealTimers()
+    queryClient.setQueryData(['dashboardConfig'], { default_crew_mode: true })
+    const creates: unknown[] = []
+    const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(async (input, init) => {
+      if (String(input).includes('/api/chat/slots') && init?.method === 'POST') creates.push(JSON.parse(String(init.body)))
+      return new Response(JSON.stringify({ key: 's-new', messages: 0, running: false }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      })
+    })
+    try {
+      renderPage([])
+      fireEvent.click(await screen.findByTestId('sessions-new'))
+      await waitFor(() => expect(screen.getByTestId('chat-target')).toBeInTheDocument())
+      expect(creates).toEqual([expect.objectContaining({ agent: 'kirocrew-conductor', agent_kind: 'template' })])
+    } finally {
+      fetchMock.mockRestore()
+      queryClient.removeQueries({ queryKey: ['dashboardConfig'] })
     }
   })
 

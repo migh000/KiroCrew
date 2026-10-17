@@ -9938,6 +9938,32 @@
       "fewerRows": "menos filas",
       "moreRows": "más filas"
     },
+    "crewMode": {
+      "chip_off": "Crew Mode",
+      "chip_on": "Crew Mode activado",
+      "chip_hint_off": "Activa Crew Mode. Tu director envía cada tarea a su propio chat.",
+      "chip_hint_on": "Desactiva Crew Mode y vuelve al agente predeterminado.",
+      "title": "Crew Mode",
+      "tagline_lead": "Tú fijas el objetivo.",
+      "tagline_strong": "Tu equipo hace el trabajo.",
+      "does_new_chat": "Abre chats",
+      "does_pass_notes": "Comparte avances",
+      "does_take_asks": "Recibe pedidos",
+      "does_check_in": "Muestra el progreso",
+      "board_title": "Tu equipo",
+      "board_preview": "Ejemplo",
+      "sample_question": "¿Qué día te viene bien?",
+      "sample_answer_a": "Hoy",
+      "sample_answer_b": "Mañana",
+      "sample_email": "Correo",
+      "sample_layout": "Diseño",
+      "sample_room": "Sala",
+      "sample_screenshot": "Captura",
+      "state_done": "Hecho",
+      "state_working": "En curso",
+      "state_needs_you": "Te necesita",
+      "state_waiting": "En espera"
+    },
     "guideLayer": {
       "region_label": "Guía",
       "close": "Cerrar",
@@ -19190,6 +19216,10 @@
       "diffLayout": {
         "description": "Muestra el código antiguo y el nuevo en dos columnas; desactivado muestra una sola columna unificada. Cambiarlo aquí o en cualquier diff lo aplica en todas partes.",
         "label": "Diffs divididos (en paralelo)"
+      },
+      "defaultCrewMode": {
+        "description": "Los chats nuevos con el agente predeterminado empiezan en Crew Mode: el director abre chats aparte para hacer el trabajo y te informa aquí. Los chats existentes no cambian.",
+        "label": "Activar Crew Mode por defecto en las sesiones nuevas"
       }
     },
     "display": {

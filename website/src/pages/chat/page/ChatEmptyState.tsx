@@ -4,6 +4,7 @@ import { MessageSquare } from 'lucide-react'
 import type { AppDispatch } from '../../../store'
 import type { ChatSlot } from '../../../types'
 import { createSlot } from '../../../store/chatSlice'
+import { newChatAgent } from '../../../lib/crewMode'
 import { EmptyState, Btn } from '../../../components/ui'
 import { i18nT } from '../../../i18n/t'
 import { uiLocation } from '../../../uiLocations/uiLocation'
@@ -43,7 +44,12 @@ export default function ChatEmptyState({
             newSlotMutation.mutate()
             return
           }
-          dispatch(createSlot({ agent: pendingAgent || undefined, agent_kind: pendingAgent ? pendingAgentKindRef.current : undefined, model: pendingModel || undefined, mode }))
+          // A refused create reports through the pane's session notice, worded as
+          // the `?new=1` create's failure is; the button stays a plain create, so
+          // pressing it again retries the same request.
+          dispatch(createSlot({ ...(pendingAgent ? { agent: pendingAgent, agent_kind: pendingAgentKindRef.current } : mode ? {} : newChatAgent()), model: pendingModel || undefined, mode }))
+            .unwrap()
+            .catch(() => setSidError(i18nT('pages.chatPage.could_not_start_a_new_session')))
         }}
       >
         {i18nT('pages.chatPage.start_a_new_chat')}

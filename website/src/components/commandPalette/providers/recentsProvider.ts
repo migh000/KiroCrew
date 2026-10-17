@@ -8,6 +8,7 @@ import { api } from '../../../api/client'
 import { useSimplifiedToolNames } from '../../../hooks/useSimplifiedToolNames'
 import { useAppDispatch, useAppSelector, useAppStore } from '../../../store'
 import { createSlot, resumeFromHistory, switchSlot } from '../../../store/chatSlice'
+import { newChatAgent } from '../../../lib/crewMode'
 import { focusComposerForOpenedSession, focusComposerForResumedSession } from '../../../pages/chat/composerFocus'
 import type { ChatSlot, ChatFolder, CronJob } from '../../../types'
 import type { Result, ResourceProvider } from '../types'
@@ -347,8 +348,9 @@ export function useRecentsProvider(): ResourceProvider {
             onActivate: () => {
               // Await the create BEFORE navigating: landing on /chat with no
               // active slot triggers ChatPage's auto-create, which would race
-              // this thunk into a duplicate session.
-              void dispatch(createSlot(undefined))
+              // this thunk into a duplicate session. A person's New Chat
+              // gesture: Settings may start it in Crew Mode.
+              void dispatch(createSlot(newChatAgent()))
                 .unwrap()
                 .catch(() => {})
                 .finally(() => navigate('/chat'))

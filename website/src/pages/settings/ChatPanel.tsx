@@ -1005,6 +1005,14 @@ export function ChatPanel({ basePath }: { basePath?: string } = {}) {
             disabled={dashDisabled || defaultModeMut.isPending}
             configKey="dashboard.default_memory_mode"
           />
+          <SettingsToggle
+            label={i18nT('settings.chat.defaultCrewMode.label')}
+            description={i18nT('settings.chat.defaultCrewMode.description')}
+            checked={dashCfg.default_crew_mode}
+            onChange={v => setDash({ default_crew_mode: v })}
+            disabled={dashDisabled}
+            configKey="dashboard.default_crew_mode"
+          />
           <SettingsInput
             label={i18nT('pages.settings.chatPanel.session_folder_root')}
             description={i18nT('pages.settings.chatPanel.session_folder_root_desc')}

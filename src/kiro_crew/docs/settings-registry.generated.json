@@ -873,6 +873,14 @@
       "description": "Tags each new session in the sidebar with up to two topics, like \"debugging\". Uses one background-model call per new session."
     },
     {
+      "id": "chat.turn-on-crew-mode-for-new-sessions-by-default",
+      "label": "Turn on Crew Mode for new sessions by default",
+      "tab": "chat",
+      "route": "/settings/chat/sessions?highlight=key%3Adashboard.default_crew_mode",
+      "description": "New chats on the default agent start in Crew Mode: the Conductor opens separate chats to do the work and reports back here. Existing chats are not changed.",
+      "configKey": "dashboard.default_crew_mode"
+    },
+    {
       "id": "chat.turn-time-limit-seconds",
       "label": "Turn Time Limit (seconds)",
       "tab": "chat",

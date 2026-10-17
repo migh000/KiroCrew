@@ -506,6 +506,16 @@ class DashboardConfig:
             "earlier messages are dropped.",
         ),
     )
+    default_crew_mode: bool = field(
+        default=False,
+        metadata=_meta(
+            "Crew Mode for New Sessions",
+            "Start new dashboard chats on the default agent in Crew Mode, which "
+            "runs them on the kirocrew-conductor agent. Applied when you start a "
+            "new chat from the dashboard; existing chats, chats on another agent "
+            "and chats an app creates are not changed.",
+        ),
+    )
     auto_open_browser: bool = field(
         default=True,
         metadata=_meta(

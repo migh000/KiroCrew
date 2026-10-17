@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { type ErrorReport, findReport } from '../../utils/errorReport'
 import { isStaleProjectDirError, resolveFolderAgent, resolveFolderProjectDir } from '../../utils/folderAgent'
 import { createSlot } from '../../store/chatSlice'
+import { newChatAgent } from '../../lib/crewMode'
 import { focusComposer } from '../chat/composerFocus'
 import { i18nT } from '../../i18n/t'
 import type { Slot } from './types'
@@ -76,7 +77,9 @@ export function useFolderChatCreate({ folders, mode, dispatch, dropSlotMutation,
       const project = resolveFolderProjectDir(folders, folderId)
       // The tab gesture registers the slot without stealing focus -- same
       // `activate: false` contract as the header New button's gesture.
-      return dispatch(createSlot({ agent, mode: mode || '', folder_id: folderId, project, activate: !inNewTab, ...(memoryMode ? { memory_mode: memoryMode } : {}) })).unwrap()
+      // A folder that pins its own agent keeps it; the Crew Mode Settings
+      // default only replaces an agent-less create (lib/crewMode).
+      return dispatch(createSlot({ ...(mode ? { agent } : newChatAgent(agent, memoryMode)), mode: mode || '', folder_id: folderId, project, activate: !inNewTab, ...(memoryMode ? { memory_mode: memoryMode } : {}) })).unwrap()
     },
     onSuccess: (slot: Slot, { folderId, columnId, focus, attempt, inNewTab }: CreateChatInFolderVars) => {
       // A create that went through supersedes an earlier failure notice for
@@ -231,7 +234,7 @@ export function useSessionCreate({ setNewChatError, dispatch, mode, onOpenSlotIn
   const createChatMutation = useMutation({
     mutationFn: ({ inNewTab }: { inNewTab: boolean }) => {
       setNewChatError('')
-      return dispatch(createSlot({ mode: mode || '', activate: !inNewTab })).unwrap()
+      return dispatch(createSlot({ ...(mode ? {} : newChatAgent()), mode: mode || '', activate: !inNewTab })).unwrap()
     },
     onSuccess: (slot, { inNewTab }) => {
       if (inNewTab && onOpenSlotInNewTab) {

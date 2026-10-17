@@ -1002,6 +1002,7 @@ def _build_dashboard_config(_degraded: set[str], dashboard_data: dict) -> Dashbo
         verbosity=_sections.normalize_verbosity(section.get("verbosity")),
         link_previews=section.read("link_previews", _safe_bool),
         tail_fork_enabled=section.get("tail_fork_enabled"),
+        default_crew_mode=section.read("default_crew_mode", _safe_bool),
         terminal=section.get("terminal"),
         default_project=section.get("default_project"),
         session_folder_root=_session_folder_root_or_empty(section.get("session_folder_root")),

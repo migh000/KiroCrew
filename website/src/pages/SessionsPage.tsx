@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Plus, MessagesSquare } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '../store'
 import { createSlot } from '../store/chatSlice'
+import { newChatAgent } from '../lib/crewMode'
 import { api } from '../api/client'
 import { isChatPageSurface } from '../utils/channelOrigin'
 import { timeAgo } from '../utils/timeAgo'
@@ -127,7 +128,8 @@ export default function SessionsPage() {
     setCreating(true)
     setCreateError(null)
     try {
-      const slot = await dispatch(createSlot(undefined)).unwrap()
+      // A person's New Chat gesture: Settings may start it in Crew Mode.
+      const slot = await dispatch(createSlot(newChatAgent())).unwrap()
       if (slot?.key) navigate(`/chat?sid=${encodeURIComponent(slot.key)}`)
     } catch (err) {
       // errMessage, not `err instanceof Error`: unwrap() throws a serialized

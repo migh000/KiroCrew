@@ -87,6 +87,7 @@ async def api_dashboard_config(request: web.Request) -> web.Response:
             "quick_send",
             "session_grid",
             "tail_fork_enabled",
+            "default_crew_mode",
             "link_previews",
             "link_patterns",
             "mcp_app_panel",
@@ -352,6 +353,20 @@ async def api_dashboard_config(request: web.Request) -> web.Response:
                     {"error": "tail_fork_enabled must be a boolean"}, status=400
                 )
             updates["tail_fork_enabled"] = val
+        if "default_crew_mode" in body:
+            val = body["default_crew_mode"]
+            if not isinstance(val, bool):
+                _sel().log_tool_invocation(
+                    session_key="dashboard", tool_name="dashboard_config_write", outcome="failure"
+                )
+                return web.json_response(
+                    {
+                        "error": "default_crew_mode must be a boolean",
+                        "code": "invalid_default_crew_mode",
+                    },
+                    status=400,
+                )
+            updates["default_crew_mode"] = val
         if "folder_suggestions_enabled" in body:
             val = body["folder_suggestions_enabled"]
             if not isinstance(val, bool):
@@ -660,6 +675,7 @@ async def api_dashboard_config(request: web.Request) -> web.Response:
             "session_card_source_links": cfg.dashboard.session_card_source_links,
             "session_folder_root": cfg.dashboard.session_folder_root,
             "tail_fork_enabled": cfg.dashboard.tail_fork_enabled,
+            "default_crew_mode": cfg.dashboard.default_crew_mode,
             "link_previews": cfg.dashboard.link_previews,
             "folder_suggestions_enabled": cfg.dashboard.folder_suggestions_enabled,
             "topic_tags_enabled": cfg.dashboard.topic_tags_enabled,

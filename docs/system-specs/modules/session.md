@@ -398,6 +398,20 @@ cleanup does not read durable session metadata. Tab close retires its nudge loop
 before other asynchronous work. After the last consumer and provider stop, cleanup
 releases only the captured identity, preserving any replacement session carrier.
 
+**Crew Mode** has no field of its own. It is a UI over the existing
+`kirocrew-conductor`: a chat is in Crew Mode exactly when its agent is that
+template. The composer switch is an ordinary `POST /api/chat/slots/{slot}/agent`
+naming the `template` namespace both ways, and a new chat starts in Crew Mode by
+being created with `agent: kirocrew-conductor`, `agent_kind: template`.
+`dashboard.default_crew_mode` is never read by the server: the dashboard's own
+new-chat gestures (the composer's first send, New Chat in the sidebar and in a
+folder, the flyout and phone New chat, the empty pane's Start a new chat, the
+Sessions page, the keyboard shortcut and the command palette) apply it through
+`website/src/lib/crewMode.ts` (`newChatAgent`), and only to an agent-less
+create, where the server would otherwise stamp the default template. App
+workstreams, "Chat with" rows, a folder's pinned agent and every other creator
+keep exactly the agent they name.
+
 ## Private member session ownership
 
 The section name is retained for existing documentation links. Member memory is

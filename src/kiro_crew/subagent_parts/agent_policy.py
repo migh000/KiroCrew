@@ -47,13 +47,16 @@ if TYPE_CHECKING:
 #: Agent names a roster never suggests: the host default and the conductors are
 #: reached by OMITTING ``agent``, not by naming one. Every roster inherits this
 #: as :func:`visible_agent_names`' default ``exclude``, so no other module names
-#: the set and it cannot drift when a reserved name appears.
+#: the set and it cannot drift when a reserved name appears. The mate conductor
+#: is a conductor too -- the one a crewmate's chat runs on -- and a worker
+#: dispatched onto it would be a conductor with no one to talk to.
 UNADVERTISED_AGENTS = frozenset(
     {
         "kirocrew",
         "kirocrew-conductor",
         "kirocrew-pipeline-conductor",
         "kirocrew-security-conductor",
+        "kirocrew-mate-conductor",
     }
 )
 
